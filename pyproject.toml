@@ -1,0 +1,22 @@
+[build-system]
+requires = ["uv_build>=0.9.6,<0.10.0"]
+build-backend = "uv_build"
+
+[project]
+name = "scripts"
+version = "0"
+description = "Local build utilities"
+requires-python = ">=3.12"
+dependencies = [
+    "tomlkit",
+    "python-benedict[toml]",
+    "packaging",
+    "click<8.2.0", # https://github.com/koxudaxi/fastapi-code-generator/issues/495
+    "typer",
+    "fastapi-code-generator"
+]
+
+[dependency-groups]
+dev = [
+  "pytest",
+]
