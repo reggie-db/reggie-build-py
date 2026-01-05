@@ -3,8 +3,8 @@ from dataclasses import dataclass
 import cappa
 from cappa import Subcommands
 
-from reggie_build.command import TestCommand2, TestCommand
-from reggie_build import sync
+from reggie_build_py.command import TestCommand2, TestCommand
+from reggie_build_py import sync
 
 
 @dataclass

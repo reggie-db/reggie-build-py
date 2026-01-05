@@ -2,8 +2,8 @@ from typing import Annotated
 
 from cappa import command, Arg
 
-from reggie_build import utils
-from reggie_build.command import BaseProjectCommand
+from reggie_build_py import utils
+from reggie_build_py.command import BaseProjectCommand
 
 
 @command(name="sync")

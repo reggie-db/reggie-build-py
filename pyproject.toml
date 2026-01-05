@@ -3,7 +3,7 @@ requires = ["uv_build>=0.9.6,<0.10.0"]
 build-backend = "uv_build"
 
 [project]
-name = "reggie-build"
+name = "reggie-build-py"
 version = "0"
 description = "Local build utilities"
 requires-python = ">=3.12"
@@ -23,6 +23,7 @@ dev = [
     "pytest",
 ]
 
+
 [project.scripts]
-reggie-build-projects = "reggie_build.projects:app"
-reggie-build-workspace = "reggie_build.workspace:app"
+reggie-build-projects = "reggie_build_py.projects:app"
+reggie-build-workspace = "reggie_build_py.workspace:app"

@@ -11,7 +11,7 @@ import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from reggie_build import utils, projects
+from reggie_build_py import utils, projects
 
 warnings.filterwarnings(
     "ignore",

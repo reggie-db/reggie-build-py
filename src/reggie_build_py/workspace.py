@@ -20,9 +20,9 @@ import tomlkit
 import typer
 from benedict.dicts import benedict
 
-from reggie_build import projects, utils
-from reggie_build.projects import Project
-from reggie_build.utils import logger
+from reggie_build_py import projects, utils
+from reggie_build_py.projects import Project
+from reggie_build_py.utils import logger
 
 LOG = logger(__file__)
 

@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 
-from reggie_build import projects
+from reggie_build_py import projects
 
 # Default version string used when git version cannot be determined
 DEFAULT_VERSION = "0.0.1"
