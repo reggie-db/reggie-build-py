@@ -210,7 +210,9 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync build-system --help -->
 ```bash
-Usage: reggie-build sync build-system [OPTIONS]                                
+2026-01-05 15:26:26 [INFO] sync - Syncing build-system
+                                                                                
+ Usage: reggie-build sync build-system [OPTIONS]                                
                                                                                 
  Synchronize build-system configuration from the root project to member         
  projects.                                                                      
@@ -229,7 +231,9 @@ Usage: reggie-build sync build-system [OPTIONS]
 
 <!-- BEGIN:cmd reggie-build sync member-project-dependencies --help -->
 ```bash
-Usage: reggie-build sync member-project-dependencies [OPTIONS]                 
+2026-01-05 15:26:26 [INFO] sync - Syncing member-project-dependencies
+                                                                                
+ Usage: reggie-build sync member-project-dependencies [OPTIONS]                 
                                                                                 
  Synchronize member project dependencies to use workspace file references.      
  Converts member project dependencies to file:// references using               
@@ -247,7 +251,9 @@ Usage: reggie-build sync member-project-dependencies [OPTIONS]
 
 <!-- BEGIN:cmd reggie-build sync member-project-tool --help -->
 ```bash
-Usage: reggie-build sync member-project-tool [OPTIONS]                         
+2026-01-05 15:26:26 [INFO] sync - Syncing member-project-tool
+                                                                                
+ Usage: reggie-build sync member-project-tool [OPTIONS]                         
                                                                                 
  Synchronize tool.member-project configuration from the root project to member  
  projects.                                                                      
@@ -266,7 +272,9 @@ Usage: reggie-build sync member-project-tool [OPTIONS]
 
 <!-- BEGIN:cmd reggie-build sync ruff --help -->
 ```bash
-Usage: reggie-build sync ruff [OPTIONS]                                        
+2026-01-05 15:26:26 [INFO] sync - Syncing ruff
+                                                                                
+ Usage: reggie-build sync ruff [OPTIONS]                                        
                                                                                 
  Run ruff formatter on git-tracked Python files.                                
  Formats all Python files tracked by git using the ruff formatter. If ruff is   
@@ -278,7 +286,9 @@ Usage: reggie-build sync ruff [OPTIONS]
 
 <!-- BEGIN:cmd reggie-build sync version --help -->
 ```bash
-Usage: reggie-build sync version [OPTIONS] [VERSION]                           
+2026-01-05 15:26:26 [INFO] sync - Syncing version
+                                                                                
+ Usage: reggie-build sync version [OPTIONS] [VERSION]                           
                                                                                 
  Synchronize project versions across selected projects.                         
  Updates the version field in pyproject.toml for all selected projects. If no   

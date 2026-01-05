@@ -16,6 +16,7 @@ import fnmatch
 import functools
 import pathlib
 import subprocess
+from itertools import chain
 from os import PathLike
 from typing import Iterable, Annotated
 
@@ -93,11 +94,12 @@ def dir(input: PathLike | str, match_member: bool = True) -> pathlib.Path | None
         Returns:
             Path to pyproject.toml file if found, None otherwise
         """
-        if path is not None:
+        if path is not None and path.name:
             if path.is_dir():
                 return _pyproject_file(path / PYPROJECT_FILE_NAME)
             elif path.name != PYPROJECT_FILE_NAME:
-                return _pyproject_file(path.parent)
+                parent = path.parent
+                return _pyproject_file(parent)
             elif path.is_file():
                 return path
         return None
@@ -109,7 +111,8 @@ def dir(input: PathLike | str, match_member: bool = True) -> pathlib.Path | None
         pass
     # Search workspace member projects by name if input is a string
     if match_member and isinstance(input, str):
-        for p in root().members():
+        root_proj = root()
+        for p in chain([root_proj], root_proj.members()):
             if p.name == input:
                 return p.dir
     return None
@@ -297,26 +300,3 @@ class Project:
             String showing the project name and directory name
         """
         return f"{Project.__name__}(name={self.name!r} dir={self.dir.name!r})"
-
-
-app = typer.Typer()
-
-
-@app.command(name="root")
-def print_root():
-    """
-    Print the string representation of the root project.
-    """
-    print(root())
-
-
-@app.command(name="root_dir")
-def print_root_dir():
-    """
-    Print the path to the workspace root directory.
-    """
-    print(root_dir())
-
-
-if __name__ == "__main__":
-    app()

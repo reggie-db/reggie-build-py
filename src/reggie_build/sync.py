@@ -17,14 +17,13 @@ import re
 import subprocess
 import sys
 from copy import deepcopy
-from benedict.dicts import benedict
 from itertools import chain
-from typing import Annotated, Callable, Iterable, Mapping, Any
-
+from typing import Annotated, Any, Callable, Iterable, Mapping
 
 import click
 import tomlkit
 import typer
+from benedict.dicts import benedict
 from typer.models import CommandInfo
 
 from reggie_build import projects, utils
@@ -48,8 +47,15 @@ def _sync_projects_option_callback(ctx: typer.Context, sync_projects: Iterable[A
     Returns:
         List of Project objects
     """
+    sync_projects_empty = not sync_projects
     sync_projects = list(_projects(sync_projects))
     ctx.meta["sync_projects"] = sync_projects
+    sync_project_names = [] if sync_projects_empty else [p.name for p in sync_projects]
+    sync_projects_log_key = "sync_projects_log"
+    if sync_project_names and not ctx.meta.get(sync_projects_log_key, None):
+        ctx.meta[sync_projects_log_key] = True
+        LOG.info(f"Syncing projects: {', '.join(sync_project_names)}")
+
     return sync_projects
 
 
@@ -108,7 +114,7 @@ _PROJECTS_OPTION = Annotated[
 
 
 @app.callback(invoke_without_command=True)
-def _callback(
+def _sync_callback(
     ctx: typer.Context,
     sync_projects: _PROJECTS_OPTION = None,
 ):
@@ -122,11 +128,10 @@ def _callback(
     Use --project to limit which projects are affected, or omit to sync all
     workspace members.
     """
-    if subcommand := ctx.invoked_subcommand:
-        if not utils.is_help(ctx):
-            _sync_log(subcommand)
-        return
-    sync(sync_projects)
+    if invoked_subcommand := ctx.invoked_subcommand:
+        _sync_log(invoked_subcommand)
+    else:
+        sync(sync_projects)
 
 
 def sync(sync_projects: _PROJECTS_OPTION = None):
@@ -354,9 +359,7 @@ def _update_projects(
         pyproject_fn(proj)
 
 
-def _projects(
-    projs: Iterable[Project | str] | None = None,
-) -> Iterable[Project]:
+def _projects(projs: Iterable[Any] | None = None) -> Iterable[Project]:
     """
     Resolve project identifiers into Project objects.
 
@@ -374,7 +377,8 @@ def _projects(
         projs = projects.root().members()
         root_proj = projects.root()
         if root_proj.pyproject.get("project", None):
-            projs = chain(projs, [root_proj])
+            projs = set(projs)
+            projs.add(root_proj)
 
     for proj in projs:
         if isinstance(proj, Project):
