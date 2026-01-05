@@ -212,12 +212,13 @@ def member_project_dependencies(
 
     def _set(p: Project):
         """Update member project dependencies for a project."""
-        LOG.info(
-            f"Syncing member project dependencies - project:{p} root_project:{projects.root()} member_project_names: {member_project_names}"
-        )
 
         doc = p.pyproject
         deps = doc.get("project.dependencies", [])
+        LOG.info(
+            f"Syncing member project dependencies - project:{p} root_project:{projects.root()} member_project_names: {member_project_names} deps:{deps}"
+        )
+
         member_deps: list[str] = []
 
         for i in range(len(deps)):
