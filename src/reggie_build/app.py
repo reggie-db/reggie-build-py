@@ -1,18 +1,32 @@
-from dataclasses import dataclass
+"""
+Main entry point for the reggie-build CLI.
 
-import cappa
-from cappa import Subcommands
+This module aggregates all subcommands from other modules and provides
+a unified interface for workspace management. The CLI provides commands for:
+- Cleaning build artifacts
+- Creating new projects
+- Synchronizing project configurations
+- Generating FastAPI code from OpenAPI specifications
+"""
 
-from reggie_build.command import TestCommand2, TestCommand
-from reggie_build import sync
+import typer
+
+from reggie_build import clean, create, openapi, sync, readme
+
+app = typer.Typer()
+app.add_typer(clean.app, name="clean")
+app.add_typer(create.app, name="create")
+app.add_typer(readme.app, name="readme")
+app.add_typer(sync.app, name="sync")
+app.add_typer(openapi.app, name="openapi")
 
 
-@dataclass
-class InvokeCommand:
-    subcommand: Subcommands[
-        TestCommand2 | TestCommand | sync.SyncCommand | sync.SyncVersionCommand
-    ]
+def main():
+    """
+    Execute the Typer application.
+    """
+    app()
 
 
 if __name__ == "__main__":
-    cappa.invoke(InvokeCommand)
+    main()

@@ -2,8 +2,14 @@
 Project management utilities for working with Python projects and pyproject.toml files.
 
 This module provides functionality to discover, load, and manipulate Python projects
-within a workspace. It supports finding projects by name or path, reading and modifying
-pyproject.toml configurations, and discovering workspace member projects.
+within a workspace. It supports:
+- Finding projects by name or path
+- Reading and modifying pyproject.toml configurations
+- Discovering workspace member projects
+- Managing project dependencies and relationships
+
+The Project class wraps a pyproject.toml file and provides convenient access to
+project metadata using benedict for dynamic attribute access.
 """
 
 import fnmatch
@@ -11,7 +17,7 @@ import functools
 import pathlib
 import subprocess
 from os import PathLike
-from typing import Iterable
+from typing import Iterable, Annotated
 
 import tomlkit
 import typer
@@ -20,6 +26,27 @@ from benedict.dicts import benedict
 
 # Standard filename for Python project configuration files
 PYPROJECT_FILE_NAME = "pyproject.toml"
+
+
+def option(**kwargs):
+    """
+    Return a Typer option for selecting projects.
+
+    Provides a standard --project/-p option for CLI commands that operate on a
+    subset of workspace projects.
+
+    Args:
+        **kwargs: Additional keyword arguments to pass to typer.Option
+
+    Returns:
+        A Typer Option instance
+    """
+    return typer.Option(
+        "-p",
+        "--project",
+        help="Optional list of project names or identifiers to sync",
+        **kwargs,
+    )
 
 
 @functools.cache
@@ -231,8 +258,8 @@ class Project:
         Get directory paths for all workspace member projects.
 
         Scans the project directory for subdirectories that match the workspace
-        member patterns and don't match exclude patterns. Only returns directories
-        that contain valid pyproject.toml files.
+        member patterns defined in tool.uv.workspace.members and don't match
+        exclude patterns. Only returns directories that contain valid pyproject.toml files.
 
         Yields:
             Path objects for each valid member project directory
@@ -277,11 +304,17 @@ app = typer.Typer()
 
 @app.command(name="root")
 def print_root():
+    """
+    Print the string representation of the root project.
+    """
     print(root())
 
 
 @app.command(name="root_dir")
 def print_root_dir():
+    """
+    Print the path to the workspace root directory.
+    """
     print(root_dir())
 
 

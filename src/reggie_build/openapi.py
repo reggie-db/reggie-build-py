@@ -1,17 +1,33 @@
 """
 OpenAPI code generation utilities.
 
-Generates FastAPI code from OpenAPI specs and syncs generated files with change detection.
+Generates FastAPI code from OpenAPI specifications and syncs generated files
+with change detection. This module provides:
+- Code generation from OpenAPI specs (local files or URLs)
+- File synchronization with hash-based change detection
+- Watch mode for continuous regeneration
+- Custom Jinja2 templates for FastAPI code generation
+
+Generated code includes:
+- FastAPI router with type-safe endpoints
+- Pydantic models from schemas
+- Abstract API contract classes for implementation
 """
 
 import hashlib
+import json
 import re
 import shutil
 import warnings
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from typing import Annotated
+from urllib.parse import urlparse
 
-from reggie_build import utils, projects
+import requests
+import typer
+
+from reggie_build import utils
 
 warnings.filterwarnings(
     "ignore",
@@ -19,28 +35,174 @@ warnings.filterwarnings(
     category=UserWarning,
     module="pydantic",
 )
-import fastapi_code_generator.__main__ as fastapi_code_generator_main  # noqa: E402
 
+import fastapi_code_generator.__main__ as fastapi_code_generator_main  # noqa: E402
 
 LOG = utils.logger(__file__)
 
+app = typer.Typer(help="OpenAPI code generation utilities.")
 
 _TIMESTAMP_RE = re.compile(rb"^\s*#\s*timestamp:.*$")
 
 
+@app.command()
+def generate(
+    input_spec: Annotated[
+        str,
+        typer.Argument(
+            help=(
+                "Path or URL to the OpenAPI specification (YAML or JSON). "
+                "May be a local file path or an HTTP(S) URL."
+            ),
+        ),
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Argument(
+            help="Destination directory for generated code.",
+        ),
+    ] = None,
+    template_dir: Annotated[
+        Path,
+        typer.Option(
+            "--template-dir",
+            help="Optional template directory for fastapi-code-generator.",
+        ),
+    ] = None,
+    watch: Annotated[
+        bool,
+        typer.Option(
+            "--watch",
+            help="Watch a local spec file for changes and regenerate on updates.",
+        ),
+    ] = False,
+):
+    """
+    Generate FastAPI code from an OpenAPI specification and sync changes.
+
+    This command generates Python code from an OpenAPI spec, creating FastAPI
+    routes and Pydantic models. It uses hash-based change detection to only
+    update the output directory when files actually change.
+
+    In watch mode, the command monitors the spec file and regenerates code
+    whenever changes are detected.
+    """
+    tmpl = template_dir or (Path(__file__).parent / "openapi_template")
+
+    resolved_input, temporary_hash = _resolve_input_spec(input_spec)
+    try:
+        if watch and temporary_hash:
+            raise ValueError("--watch is only supported for local file paths")
+
+        if not output_dir:
+            # Generate a unique directory name if none is provided
+            dir_name = f"openapi_{temporary_hash}"
+            output_dir = utils.dev_local() / dir_name
+
+        def _generate():
+            """
+            Inner function to handle the code generation and synchronization.
+            """
+            with TemporaryDirectory() as tmp:
+                tmp_dir = Path(tmp)
+                LOG.info(f"Generating code: {resolved_input} → {output_dir}")
+
+                try:
+                    # Invoke fastapi-code-generator via its Typer app
+                    fastapi_code_generator_main.app(
+                        [
+                            "--input",
+                            str(resolved_input),
+                            "--output",
+                            str(tmp_dir),
+                            "--template-dir",
+                            str(tmpl),
+                        ]
+                    )
+                except SystemExit as e:
+                    # Ignore successful exits from the sub-application
+                    if e.code:
+                        raise
+
+                (tmp_dir / "__init__.py").touch()
+                sync_generated_code(tmp_dir, output_dir)
+
+        if watch:
+            for _ in utils.watch_file(resolved_input):
+                _generate()
+        else:
+            _generate()
+    finally:
+        if temporary_hash:
+            try:
+                resolved_input.unlink()
+            except Exception:
+                pass
+
+
+def _resolve_input_spec(value: str) -> tuple[Path, str | None]:
+    """
+    Resolve an OpenAPI spec input as either a local path or a URL.
+
+    Returns:
+        (path, content_hash)
+        content_hash is an md5 hex digest if the spec was downloaded, otherwise None
+    """
+    p = Path(value)
+    if p.exists():
+        return p.resolve(), None
+
+    parsed = urlparse(value)
+    if parsed.scheme in {"http", "https"} and parsed.netloc:
+        LOG.info(f"Downloading OpenAPI spec from {value}")
+
+        resp = requests.get(value, timeout=30)
+        resp.raise_for_status()
+
+        content = resp.content
+        content_hash = hashlib.md5(content).hexdigest()
+
+        try:
+            json.loads(content)
+            suffix = ".json"
+        except json.decoder.JSONDecodeError:
+            suffix = ".yaml"
+
+        tmp = NamedTemporaryFile(delete=False, suffix=suffix)
+        tmp.write(content)
+        tmp.flush()
+        tmp.close()
+
+        return Path(tmp.name), content_hash
+
+    raise ValueError(f"Invalid OpenAPI spec path or URL: {value}")
+
+    raise ValueError(f"Invalid OpenAPI spec path or URL: {value}")
+
+
 def sync_generated_code(input_dir: Path, output_dir: Path) -> None:
-    """Sync generated code from input_dir to output_dir if any relative file differs."""
+    """
+    Sync generated code from input_dir to output_dir if any relative file differs.
+
+    Compares files using hash-based change detection and only performs a full
+    copy if changes are detected. Logs all changed files for visibility.
+
+    Args:
+        input_dir: Source directory containing newly generated code
+        output_dir: Destination directory to sync to
+    """
     if not input_dir.exists():
         raise FileNotFoundError(f"Missing input directory: {input_dir}")
 
-    input_dir, output_dir = input_dir.resolve(), output_dir.resolve()
-    input_files, output_files = _list_files(input_dir), _list_files(output_dir)
+    input_dir = input_dir.resolve()
+    output_dir = output_dir.resolve()
 
-    changed = []
+    input_files = _list_files(input_dir)
+    output_files = _list_files(output_dir)
+
+    changed: list[str] = []
     for file in set(input_files + output_files):
-        input_hash = _hash_file(input_dir, file)
-        output_hash = _hash_file(output_dir, file)
-        if input_hash != output_hash:
+        if _hash_file(input_dir, file) != _hash_file(output_dir, file):
             changed.append(file)
 
     if not changed:
@@ -56,55 +218,39 @@ def sync_generated_code(input_dir: Path, output_dir: Path) -> None:
 
 
 def _list_files(directory: Path) -> list[str]:
-    """Return relative file paths from directory, skipping caches and compiled files."""
+    """
+    Return relative file paths from directory, skipping caches and compiled files.
+    """
     if not directory.is_dir():
         return []
-    rel_files: set[str] = {
+
+    rel_files = {
         str(p.relative_to(directory))
         for p in directory.rglob("*")
         if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"
     }
-    return sorted(list(rel_files))
+    return sorted(rel_files)
 
 
 def _hash_file(dir: Path, rel_file: str) -> str:
-    """Return SHA-256 hashes for given relative file paths, ignoring timestamp comments."""
+    """
+    Return SHA-256 hash for a relative file path, ignoring timestamp comments.
+    """
     h = hashlib.sha256()
     file_path = dir / rel_file
+
     if file_path.is_file():
         with open(file_path, "rb") as f:
             for line in f:
                 if not _TIMESTAMP_RE.match(line):
-                    decoded_line = line.decode("utf-8", errors="ignore")
-                    decoded_line = decoded_line.replace("\\'", '\\"').replace("'", '"')
-                    h.update(decoded_line.encode())
+                    decoded = line.decode("utf-8", errors="ignore")
+                    decoded = decoded.replace("\\'", '\\"').replace("'", '"')
+                    h.update(decoded.encode())
     elif file_path.is_dir():
-        h.update("|".encode())
+        h.update(b"|")
+
     return h.hexdigest()
 
 
 if __name__ == "__main__":
-    src = Path("/Users/reggie.pierce/Projects/reggie-demo-ui/iot/src/openapi.yaml")
-    tmpl = Path(__file__).parent / "openapi_template"
-    out = projects.root_dir() / "demo-iot/src/demo_iot_generated"
-
-    for _ in utils.watch_file(src):
-        with TemporaryDirectory() as tmp:
-            tmp_dir = Path(tmp)
-            LOG.info(f"Generating code: {src} → {out}")
-            try:
-                fastapi_code_generator_main.app(
-                    [
-                        "--input",
-                        str(src),
-                        "--output",
-                        str(tmp_dir),
-                        "--template-dir",
-                        str(tmpl),
-                    ]
-                )
-            except SystemExit as e:
-                if e.code:
-                    raise
-            (tmp_dir / "__init__.py").touch()
-            sync_generated_code(tmp_dir, out)
+    app()

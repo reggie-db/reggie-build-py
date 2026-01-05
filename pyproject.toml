@@ -6,10 +6,8 @@ build-backend = "uv_build"
 name = "reggie-build"
 version = "0"
 description = "Local build utilities"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
-    "cappa",
-    "pydantic",
     "tomlkit",
     "python-benedict[toml]",
     "packaging",
@@ -25,5 +23,4 @@ dev = [
 
 
 [project.scripts]
-reggie-build-projects = "reggie_build_py.projects:app"
-reggie-build-workspace = "reggie_build_py.workspace:app"
+reggie-build = "reggie_build.app:main"
