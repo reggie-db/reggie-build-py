@@ -195,10 +195,6 @@ def member_project_dependencies(
     """
     member_project_names = [p.name for p in projects.root().members()]
 
-    LOG.info(
-        f"Syncing member project dependencies - root_project:{projects.root()} member_project_names: {member_project_names}"
-    )
-
     def parse_dep_name(dep: str) -> str | None:
         """
         Parse a dependency string to extract the project name.
@@ -216,6 +212,10 @@ def member_project_dependencies(
 
     def _set(p: Project):
         """Update member project dependencies for a project."""
+        LOG.info(
+            f"Syncing member project dependencies - project:{p} root_project:{projects.root()} member_project_names: {member_project_names}"
+        )
+
         doc = p.pyproject
         deps = doc.get("project.dependencies", [])
         member_deps: list[str] = []
