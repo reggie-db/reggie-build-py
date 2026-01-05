@@ -224,11 +224,12 @@ def member_project_dependencies(
         for i in range(len(deps)):
             dep = parse_dep_name(deps[i])
             if dep not in member_project_names:
+                LOG.info(f"Skipping {dep}")
                 continue
             # Use a relative file reference with a placeholder for the workspace root
             deps[i] = f"{dep} @ file://${{PROJECT_ROOT}}/../{dep}"
             member_deps.append(dep)
-
+        LOG.info(f"Member deps {member_deps}")
         sources = doc.get("tool.uv.sources", None)
         if isinstance(sources, Mapping):
             # Clean up obsolete workspace sources
