@@ -131,10 +131,11 @@ def _sync_callback(
     if invoked_subcommand := ctx.invoked_subcommand:
         _sync_log(invoked_subcommand)
     else:
-        sync(sync_projects)
+        # persist handled by callbacks
+        sync(sync_projects, persist=False)
 
 
-def sync(sync_projects: _PROJECTS_OPTION = None):
+def sync(sync_projects: _PROJECTS_OPTION = None, persist: bool = True):
     """
     Execute all registered sync commands for the specified projects.
 
@@ -143,6 +144,7 @@ def sync(sync_projects: _PROJECTS_OPTION = None):
 
     Args:
         sync_projects: Optional list of project identifiers to sync
+        persist: persist all projects
     """
     projs = list(_projects(sync_projects))
     for cmd in app.registered_commands:
@@ -150,6 +152,8 @@ def sync(sync_projects: _PROJECTS_OPTION = None):
         callback = cmd.callback
         sig = inspect.signature(callback)
         callback(projs) if len(sig.parameters) >= 1 else callback()
+    if persist:
+        _persist_projects(sync_projects)
 
 
 def _sync_log(cmd: CommandInfo | str):
@@ -215,21 +219,15 @@ def member_project_dependencies(
 
         doc = p.pyproject
         deps = doc.get("project.dependencies", [])
-        LOG.info(
-            f"Syncing member project dependencies - project:{p} root_project:{projects.root()} member_project_names: {member_project_names} deps:{deps}"
-        )
-
         member_deps: list[str] = []
 
         for i in range(len(deps)):
             dep = parse_dep_name(deps[i])
             if dep not in member_project_names:
-                LOG.info(f"Skipping {dep}")
                 continue
             # Use a relative file reference with a placeholder for the workspace root
             deps[i] = f"{dep} @ file://${{PROJECT_ROOT}}/../{dep}"
             member_deps.append(dep)
-        LOG.info(f"Member deps {member_deps}")
         sources = doc.get("tool.uv.sources", None)
         if isinstance(sources, Mapping):
             # Clean up obsolete workspace sources
