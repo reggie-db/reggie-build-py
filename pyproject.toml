@@ -4,10 +4,11 @@ build-backend = "uv_build"
 
 [project]
 name = "reggie-build"
-version = "0.0.1+gc5549bd"
+version = "0.0.1+g0f12481"
 description = "Local build utilities"
 requires-python = ">=3.12,<3.14"
 dependencies = [
+    "pydantic>=2.0",
     "tomlkit",
     "packaging",
     "click<8.2.0", # https://github.com/koxudaxi/fastapi-code-generator/issues/495

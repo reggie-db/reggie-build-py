@@ -23,9 +23,6 @@ app.add_typer(openapi.app, name="openapi")
 
 
 def main():
-    """
-    Execute the Typer application.
-    """
     app()
 
 
