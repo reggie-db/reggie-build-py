@@ -112,5 +112,5 @@ def member(
     package_dir = project_dir / "src" / name.replace("-", "_")
     package_dir.mkdir(parents=True, exist_ok=True)
     (package_dir / "__init__.py").touch()
-    sync.sync([name])
+    sync.all([projects.Project(pyproject_path)])
     LOG.info(f"Member project created: {name}")

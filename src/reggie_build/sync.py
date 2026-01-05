@@ -120,7 +120,7 @@ _PROJECTS_OPTION = Annotated[
 
 
 @app.callback(invoke_without_command=True)
-def _sync_callback(
+def _callback(
     ctx: typer.Context,
     sync_projects: _PROJECTS_OPTION = None,
 ):
@@ -138,10 +138,10 @@ def _sync_callback(
         _sync_log(invoked_subcommand)
     else:
         # persist handled by callbacks
-        sync(sync_projects, persist=False)
+        all(_projects(sync_projects), persist=False)
 
 
-def sync(sync_projects: _PROJECTS_OPTION = None, persist: bool = True):
+def all(projs: Iterable[Project], persist: bool = True):
     """
     Execute all registered sync commands for the specified projects.
 
@@ -149,17 +149,16 @@ def sync(sync_projects: _PROJECTS_OPTION = None, persist: bool = True):
     passing the project list if the command accepts parameters.
 
     Args:
-        sync_projects: Optional list of project identifiers to sync
+        projs: List of project identifiers to sync
         persist: persist all projects
     """
-    projs = list(_projects(sync_projects))
     for cmd in app.registered_commands:
         _sync_log(cmd)
         callback = cmd.callback
         sig = inspect.signature(callback)
         callback(projs) if len(sig.parameters) >= 1 else callback()
     if persist:
-        _persist_projects(sync_projects, force=True)
+        _persist_projects(projs, force=True)
 
 
 def _sync_log(cmd: CommandInfo | str):
