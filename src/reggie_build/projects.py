@@ -14,11 +14,9 @@ from os import PathLike
 from typing import Iterable
 
 import tomlkit
+import typer
 from benedict.dicts import benedict
 
-from scripts.utils import logger
-
-LOG = logger(__file__)
 
 # Standard filename for Python project configuration files
 PYPROJECT_FILE_NAME = "pyproject.toml"
@@ -137,7 +135,7 @@ def scripts_dir() -> pathlib.Path:
     for p in root().members():
         if file.is_relative_to(p.dir):
             return p.dir
-    raise ValueError(f"Scripts dir not found: {file}")
+    return file.parent
 
 
 class Project:
@@ -274,13 +272,18 @@ class Project:
         return f"{Project.__name__}(name={self.name!r} dir={self.dir.name!r})"
 
 
+app = typer.Typer()
+
+
+@app.command(name="root")
+def print_root():
+    print(root())
+
+
+@app.command(name="root_dir")
+def print_root_dir():
+    print(root_dir())
+
+
 if __name__ == "__main__":
-    LOG.info("-")
-    LOG.info(root().name)
-    LOG.info(root().pyproject)
-    LOG.info(list(m.name for m in root().members()))
-    LOG.info(scripts_dir())
-    p = Project(root_dir() / "reggie-tools")
-    p.pyproject.tool.test.example = "xyz12"
-    LOG.info(p.name)
-    LOG.info(tomlkit.dumps(p.pyproject))
+    app()

@@ -11,11 +11,7 @@ import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from reggie_core import logs
-
-import utils
-
-from scripts import projects
+from reggie_build import utils, projects
 
 warnings.filterwarnings(
     "ignore",
@@ -25,7 +21,10 @@ warnings.filterwarnings(
 )
 import fastapi_code_generator.__main__ as fastapi_code_generator_main  # noqa: E402
 
-LOG = logs.logger(__file__)
+
+LOG = utils.logger(__file__)
+
+
 _TIMESTAMP_RE = re.compile(rb"^\s*#\s*timestamp:.*$")
 
 

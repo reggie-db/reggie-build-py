@@ -3,11 +3,13 @@ requires = ["uv_build>=0.9.6,<0.10.0"]
 build-backend = "uv_build"
 
 [project]
-name = "scripts"
+name = "reggie-build"
 version = "0"
 description = "Local build utilities"
 requires-python = ">=3.12"
 dependencies = [
+    "cappa",
+    "pydantic",
     "tomlkit",
     "python-benedict[toml]",
     "packaging",
@@ -18,5 +20,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "pytest",
+    "pytest",
 ]
+
+[project.scripts]
+reggie-build-projects = "reggie_build.projects:app"
+reggie-build-workspace = "reggie_build.workspace:app"

@@ -6,7 +6,6 @@ It supports synchronizing project configurations (versions, build systems, depen
 creating new member projects, and cleaning build artifacts across the workspace.
 """
 
-import functools
 import inspect
 import os
 import pathlib
@@ -21,13 +20,9 @@ import tomlkit
 import typer
 from benedict.dicts import benedict
 
-from scripts import projects
-from scripts.projects import Project
-from scripts.utils import logger
-
-# Default version string used when git version cannot be determined
-_DEFAULT_VERSION = "0.0.1"
-
+from reggie_build import projects, utils
+from reggie_build.projects import Project
+from reggie_build.utils import logger
 
 LOG = logger(__file__)
 
@@ -63,9 +58,8 @@ def _sync_result_callback(ctx: typer.Context, _):
         ctx: Typer context object containing command metadata
         _: Unused parameter (required by Typer callback signature)
     """
-    key = "sync_projects"
-    if key in ctx.meta:
-        _persist_projects(ctx.meta[key])
+    if sync_projects := ctx.meta.get("sync_projects", None):
+        _persist_projects(sync_projects)
 
 
 _SYNC_PROJECTS_OPTION = Annotated[
@@ -143,7 +137,7 @@ def sync_version(
     ] = None,
 ):
     if not version:
-        version = _git_version() or _DEFAULT_VERSION
+        version = utils.git_version() or utils.DEFAULT_VERSION
 
     def _set(p: Project):
         data = {"project": {"version": version}}
@@ -232,9 +226,9 @@ def sync_member_project_dependencies(sync_projects: _SYNC_PROJECTS_OPTION = None
     help="Run ruff on git tracked python fils",
 )
 def sync_ruff():
-    ruff_exec = _exec("ruff")
+    ruff_exec = utils.which("ruff")
     if ruff_exec:
-        git_files = _git_files()
+        git_files = utils.git_files()
         if git_files:
             py_files = [str(f) for f in git_files if f.name.endswith(".py")]
             subprocess.run(["ruff", "format", *py_files], check=True)
@@ -343,58 +337,6 @@ def clean_build_artifacts():
             shutil.rmtree(path)
 
 
-@functools.lru_cache(maxsize=None)
-def _exec(name: str) -> pathlib.Path | None:
-    path = shutil.which(name)
-    if path:
-        return pathlib.Path(path)
-    LOG.warning(f"Executable not found: {name}")
-    return None
-
-
-@functools.cache
-def _git_files() -> list[pathlib.Path] | None:
-    git_exec = _exec("git")
-    if git_exec:
-        try:
-            result = subprocess.run(
-                [str(git_exec), "ls-files"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            return [pathlib.Path(f) for f in result.stdout.splitlines() if f]
-        except Exception:
-            pass
-    return None
-
-
-def _git_version() -> str | None:
-    """
-    Build a workspace version string from git commit hash.
-
-    Constructs a version string in the format <default_version>+g<short_rev> using
-    the current git commit hash. Returns None if git is unavailable or the command
-    fails.
-
-    Returns:
-        Version string like "0.0.1+g767bd46" or None if git is unavailable
-    """
-    git_exec = _exec("git")
-    if git_exec:
-        try:
-            rev = subprocess.check_output(
-                [str(git_exec), "rev-parse", "--short", "HEAD"],
-                cwd=pathlib.Path(__file__).resolve().parents[1],
-                text=True,
-            ).strip()
-            if rev:
-                return f"{_DEFAULT_VERSION}+g{rev}"
-        except Exception:
-            pass
-    return None
-
-
 def _update_projects(
     pyproject_fn: Callable[[Project], None],
     projs: Iterable[Any] | None,
@@ -474,15 +416,6 @@ def _projects(projs: Iterable[Any] = None) -> Iterable[Project]:
                 raise ValueError(f"Project {proj} not found - sync_projects: {projs}")
             proj = Project(project_dir)
         yield proj
-
-
-@app.callback(
-    invoke_without_command=True,
-    help="Workspace management CLI tool for synchronizing and managing Python projects.",
-)
-def main():
-    # sync()
-    pass
 
 
 if __name__ == "__main__":
