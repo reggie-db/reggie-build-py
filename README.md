@@ -457,8 +457,6 @@ Usage: reggie-build sync [OPTIONS] COMMAND [ARGS]...
 ```
 <!-- END:cmd reggie-build sync --help -->
 
-```
-
 It executes the command between `BEGIN:cmd` and `--help`, captures the output, and replaces the content between the BEGIN and END markers with a formatted code block containing the command's output.
 
 **Features**:

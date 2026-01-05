@@ -15,7 +15,7 @@ import tomlkit
 import typer
 from benedict.dicts import benedict
 
-from reggie_build import projects
+from reggie_build import projects, sync
 from reggie_build.projects import Project
 from reggie_build.utils import logger
 
@@ -112,5 +112,5 @@ def member(
     package_dir = project_dir / "src" / name.replace("-", "_")
     package_dir.mkdir(parents=True, exist_ok=True)
     (package_dir / "__init__.py").touch()
-
+    sync.sync([name])
     LOG.info(f"Member project created: {name}")

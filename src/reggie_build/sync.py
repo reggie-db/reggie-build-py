@@ -108,7 +108,7 @@ _PROJECTS_OPTION = Annotated[
 
 
 @app.callback(invoke_without_command=True)
-def sync(
+def _callback(
     ctx: typer.Context,
     sync_projects: _PROJECTS_OPTION = None,
 ):
@@ -126,10 +126,10 @@ def sync(
         if not utils.is_help(ctx):
             _sync_log(subcommand)
         return
-    _sync(sync_projects)
+    sync(sync_projects)
 
 
-def _sync(sync_projects: _PROJECTS_OPTION = None):
+def sync(sync_projects: _PROJECTS_OPTION = None):
     """
     Execute all registered sync commands for the specified projects.
 
