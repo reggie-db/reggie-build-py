@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "reggie-build"
-version = "0.0.1+ge2a84e8"
+version = "0.0.1+gc5549bd"
 description = "Local build utilities"
 requires-python = ">=3.12,<3.14"
 dependencies = [
@@ -19,6 +19,4 @@ dependencies = [
 reggie-build = "reggie_build.app:main"
 
 [dependency-groups]
-dev = [
-    "pytest",
-]
+dev = ["pytest"]
