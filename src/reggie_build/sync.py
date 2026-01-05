@@ -16,8 +16,11 @@ import inspect
 import re
 import subprocess
 from copy import deepcopy
-from typing import Annotated, Callable, Iterable, Mapping
+from typing import Annotated, Callable, Iterable, Mapping, Any
 
+import benedict
+import click
+import tomlkit
 import typer
 
 from reggie_build import projects, utils
@@ -26,10 +29,73 @@ from reggie_build.utils import logger
 
 LOG = logger(__file__)
 
-app = typer.Typer()
+
+def _sync_projects_option_callback(ctx: typer.Context, sync_projects: Iterable[Any]):
+    """
+    Callback for processing sync project options from CLI.
+
+    Converts project identifiers to Project objects and stores them in context metadata
+    for later use by the sync result callback.
+
+    Args:
+        ctx: Typer context object containing command metadata
+        sync_projects: Iterable of project identifiers (names or Project objects)
+
+    Returns:
+        List of Project objects
+    """
+    sync_projects = list(_projects(sync_projects))
+    ctx.meta["sync_projects"] = sync_projects
+    return sync_projects
 
 
-_PROJECTS_OPTION = Annotated[list[str], projects.option()]
+@click.pass_context
+def _sync_result_callback(ctx: typer.Context, *args, **kwargs):
+    """
+    Result callback for sync commands that persists project changes.
+
+    This callback is invoked after sync commands complete to save any modifications
+    made to project pyproject.toml files.
+
+    Args:
+        ctx: Typer context object containing command metadata
+        _: Unused parameter (required by Typer callback signature)
+    """
+    if sync_projects := ctx.meta.get("sync_projects", None):
+        _persist_projects(sync_projects)
+
+
+def _persist_projects(projs: Iterable[Any] = None, prune: bool = True):
+    """
+    Save pyproject.toml changes to disk for specified projects.
+
+    Writes the pyproject configuration back to the pyproject.toml file for each
+    project, but only if the content has changed. Optionally prunes empty values
+    from the configuration before saving.
+
+    Args:
+        projs: Optional iterable of project identifiers to persist.
+               If None, persists all workspace member projects.
+        prune: If True, removes empty values from configuration before saving
+    """
+    for proj in _projects(projs):
+        file = proj.pyproject_file
+        doc = proj.pyproject
+        # Remove empty values to keep configuration clean
+        if prune and isinstance(doc, benedict):
+            doc.clean(strings=False)
+        text = tomlkit.dumps(doc)
+        current_text = file.read_text() if file.exists() else None
+        # Only write if content has changed
+        if text != current_text:
+            file.write_text(text)
+            LOG.info(f"Project updated:{file}")
+
+
+app = typer.Typer(result_callback=_sync_result_callback)
+_PROJECTS_OPTION = Annotated[
+    list[str], projects.option(callback=_sync_projects_option_callback)
+]
 
 
 @app.callback(invoke_without_command=True)
