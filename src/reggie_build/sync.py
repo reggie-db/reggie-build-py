@@ -234,13 +234,11 @@ def member_project_dependencies(
             deps[i] = f"{dep} @ file://${{PROJECT_ROOT}}/../{dep}"
             member_deps.append(dep)
         sources = doc.get("tool.uv.sources", None)
-        removed_sources = []
         if isinstance(sources, Mapping):
             # Clean up obsolete workspace sources
             for k in list(sources.keys()):
                 if k not in member_deps and sources[k].get("workspace") is True:
                     del sources[k]
-                    removed_sources.append(k)
 
         if member_deps:
             # Add or update tool.uv.sources for workspace members
@@ -253,9 +251,6 @@ def member_project_dependencies(
                     .setdefault(dep, {})
                 )["workspace"] = True
             p.pyproject.merge(data)
-        LOG.debug(
-            f"Member project dependencies synced - project:{p.name} member_deps:{member_deps} pyproject:{p.pyproject} sources:{sources} removed_sources:{removed_sources}"
-        )
 
     _update_projects(_set, sync_projects)
 
