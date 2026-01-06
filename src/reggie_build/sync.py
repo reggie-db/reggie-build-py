@@ -97,7 +97,7 @@ def _callback(
     workspace members.
     """
     if invoked_subcommand := ctx.invoked_subcommand:
-        _sync_log(invoked_subcommand)
+        _log_command(invoked_subcommand)
         _projects_meta(ctx).clear()
     else:
         # persist handled by callbacks
@@ -118,7 +118,7 @@ def all(projs: list[PyProject], persist: bool = True):
     if not isinstance(projs, list):
         projs = list(projs)
     for cmd in app.registered_commands:
-        _sync_log(cmd)
+        _log_command(cmd)
         callback = cmd.callback
         sig = inspect.signature(callback)
         callback(projs) if len(sig.parameters) >= 1 else callback()
@@ -126,9 +126,11 @@ def all(projs: list[PyProject], persist: bool = True):
         _projects_persist(projs)
 
 
-def _sync_log(cmd: CommandInfo | str):
+def _log_command(cmd: CommandInfo | str):
     if isinstance(cmd, CommandInfo):
-        cmd_name = getattr(cmd.callback, "__name__", None)
+        cmd_name = cmd.name
+        if not cmd_name:
+            cmd_name = getattr(cmd.callback, "__name__", None)
     else:
         cmd_name = cmd
     LOG.info(f"Syncing {cmd_name}")
