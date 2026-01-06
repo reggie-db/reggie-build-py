@@ -147,12 +147,29 @@ def _metadata(cwd: PathLike | str | None = None) -> WorkspaceMetadata:
         WorkspaceMetadata parsed from uv output
     """
     args = ["uv", "workspace", "metadata"]
-    metadata_json = subprocess.check_output(
+    proc = subprocess.Popen(
         args,
-        text=True,
         cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
-    metadata_data = json.loads(metadata_json)
+
+    assert proc.stdout is not None
+    assert proc.stderr is not None
+
+    # Read stderr asynchronously-like (interleaved is fine here)
+    for line in proc.stderr:
+        LOG.debug(line.rstrip())
+
+    # Now read stdout fully
+    stdout = proc.stdout.read()
+
+    ret = proc.wait()
+    if ret != 0:
+        raise subprocess.CalledProcessError(ret, args)
+
+    metadata_data = json.loads(stdout)
     return WorkspaceMetadata.from_dict(metadata_data)
 
 

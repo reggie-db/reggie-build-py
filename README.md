@@ -214,8 +214,8 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync build-system --help -->
 ```bash
-2026-01-06 16:17:26 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
-2026-01-06 16:17:26 [INFO] sync - Syncing build-system
+2026-01-06 16:19:55 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
+2026-01-06 16:19:55 [INFO] sync - Syncing build-system
                                                                                 
  Usage: reggie-build sync build-system [OPTIONS]                                
                                                                                 
@@ -236,8 +236,8 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync member-project-dependencies --help -->
 ```bash
-2026-01-06 16:17:26 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
-2026-01-06 16:17:26 [INFO] sync - Syncing member-project-dependencies
+2026-01-06 16:19:55 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
+2026-01-06 16:19:55 [INFO] sync - Syncing member-project-dependencies
                                                                                 
  Usage: reggie-build sync member-project-dependencies [OPTIONS]                 
                                                                                 
@@ -257,8 +257,8 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync member-project-tool --help -->
 ```bash
-2026-01-06 16:17:26 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
-2026-01-06 16:17:26 [INFO] sync - Syncing member-project-tool
+2026-01-06 16:19:55 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
+2026-01-06 16:19:55 [INFO] sync - Syncing member-project-tool
                                                                                 
  Usage: reggie-build sync member-project-tool [OPTIONS]                         
                                                                                 
@@ -279,8 +279,8 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync ruff --help -->
 ```bash
-2026-01-06 16:17:26 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
-2026-01-06 16:17:26 [INFO] sync - Syncing ruff
+2026-01-06 16:19:55 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
+2026-01-06 16:19:55 [INFO] sync - Syncing ruff
                                                                                 
  Usage: reggie-build sync ruff [OPTIONS]                                        
                                                                                 
@@ -296,8 +296,8 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync version --help -->
 ```bash
-2026-01-06 16:17:26 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
-2026-01-06 16:17:26 [INFO] sync - Syncing version
+2026-01-06 16:19:55 [INFO] workspaces - Workspace metadata loaded: /Users/reggie.pierce/Projects/reggie-build-py
+2026-01-06 16:19:55 [INFO] sync - Syncing version
                                                                                 
  Usage: reggie-build sync version [OPTIONS] [VERSION]                           
                                                                                 
