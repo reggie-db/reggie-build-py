@@ -20,6 +20,10 @@ from dataclasses import dataclass
 from os import PathLike
 from urllib.parse import urlparse
 
+from reggie_build import utils
+
+LOG = utils.logger(__file__)
+
 
 @dataclass
 class WorkspaceProject:
@@ -127,7 +131,9 @@ def metadata(cwd: PathLike | str | None = None):
 @functools.cache
 def _metadata_default():
     """Cached version of _metadata() for the current directory."""
-    return _metadata()
+    metadata = _metadata()
+    LOG.info(f"Workspace metadata loaded: {metadata.workspace_root}")
+    return metadata
 
 
 def _metadata(cwd: PathLike | str | None = None) -> WorkspaceMetadata:
