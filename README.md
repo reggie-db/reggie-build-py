@@ -84,9 +84,12 @@ pip install -e .
 Usage: reggie-build clean build-artifacts [OPTIONS]                            
                                                                                 
  Remove Python build artifacts from the workspace.                              
- This command recursively walks the workspace directory tree and removes: -     
- Virtual environment directories (.venv) - Python bytecode cache directories    
- (__pycache__) - Python egg-info directories                                    
+                                                                                
+ This command recursively walks the workspace directory tree and removes:       
+ - Virtual environment directories (.venv)                                      
+ - Python bytecode cache directories (__pycache__)                              
+ - Python egg-info directories                                                  
+                                                                                
  It protects the root .venv and scripts directory from deletion.
 ```
 <!-- END:cmd reggie-build clean build-artifacts --help -->
@@ -110,16 +113,18 @@ The root `.venv` and scripts directory are protected from deletion.
 Usage: reggie-build create member [OPTIONS] NAME                               
                                                                                 
  Create a new member project in the workspace.                                  
- This command creates a new Python project with: - A pyproject.toml             
- configuration file - Standard src layout (src/<package_name>/__init__.py) -    
- Optional dependencies on other workspace projects                              
+                                                                                
+ This command creates a new Python project with:                                
+ - A pyproject.toml configuration file                                          
+ - Standard src layout (src/<package_name>/__init__.py)                         
+ - Optional dependencies on other workspace projects                            
+                                                                                
  The project name is used for both the directory and package name (with hyphens 
  converted to underscores for the package).                                     
                                                                                 
 ╭─ Arguments ──────────────────────────────────────────────────────────────────╮
 │ *    name      TEXT  Name of the project to create. Used as both the         │
 │                      directory name and the project name.                    │
-│                      [default: None]                                         │
 │                      [required]                                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
@@ -127,12 +132,10 @@ Usage: reggie-build create member [OPTIONS] NAME
 │                                           within the workspace root. If      │
 │                                           omitted, the project is created in │
 │                                           the workspace root.                │
-│                                           [default: None]                    │
 │ --project-dependency  -pd      TEXT       Optional list of existing          │
 │                                           workspace project names to include │
 │                                           as dependencies in the new         │
 │                                           project's pyproject.toml.          │
-│                                           [default: None]                    │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 <!-- END:cmd reggie-build create member --help -->
@@ -163,16 +166,17 @@ Created projects include:
 Usage: reggie-build sync [OPTIONS] COMMAND [ARGS]...                           
                                                                                 
  Synchronize all configuration across member projects.                          
+                                                                                
  When run without a subcommand, executes all registered sync commands against   
- the selected projects. This includes build-system config, dependencies, tool   
- settings, formatting, and versioning.                                          
+ the selected projects. This includes build-system config, dependencies,        
+ tool settings, formatting, and versioning.                                     
+                                                                                
  Use --project to limit which projects are affected, or omit to sync all        
  workspace members.                                                             
                                                                                 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --project  -p      TEXT  Optional list of project names or identifiers to    │
 │                          sync                                                │
-│                          [default: None]                                     │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────╮
 │ build-system                  Synchronize build-system configuration from    │
@@ -210,19 +214,19 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync build-system --help -->
 ```bash
-2026-01-05 18:19:27 [INFO] sync - Syncing build-system
+2026-01-06 05:44:34 [INFO] sync - Syncing build-system
                                                                                 
  Usage: reggie-build sync build-system [OPTIONS]                                
                                                                                 
  Synchronize build-system configuration from the root project to member         
  projects.                                                                      
- Copies the [build-system] section from the root pyproject.toml to all selected 
+                                                                                
+ Copies the  section from the root pyproject.toml to all selected               
  projects, ensuring consistent build tooling across the workspace.              
                                                                                 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --project  -p      TEXT  Optional list of project names or identifiers to    │
 │                          sync                                                │
-│                          [default: None]                                     │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 <!-- END:cmd reggie-build sync build-system --help -->
@@ -231,18 +235,18 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync member-project-dependencies --help -->
 ```bash
-2026-01-05 18:19:27 [INFO] sync - Syncing member-project-dependencies
+2026-01-06 05:44:34 [INFO] sync - Syncing member-project-dependencies
                                                                                 
  Usage: reggie-build sync member-project-dependencies [OPTIONS]                 
                                                                                 
  Synchronize member project dependencies to use workspace file references.      
+                                                                                
  Converts member project dependencies to file:// references using               
  ${PROJECT_ROOT} placeholders and updates tool.uv.sources accordingly.          
                                                                                 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --project  -p      TEXT  Optional list of project names or identifiers to    │
 │                          sync                                                │
-│                          [default: None]                                     │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 <!-- END:cmd reggie-build sync member-project-dependencies --help -->
@@ -251,19 +255,19 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync member-project-tool --help -->
 ```bash
-2026-01-05 18:19:27 [INFO] sync - Syncing member-project-tool
+2026-01-06 05:44:34 [INFO] sync - Syncing member-project-tool
                                                                                 
  Usage: reggie-build sync member-project-tool [OPTIONS]                         
                                                                                 
  Synchronize tool.member-project configuration from the root project to member  
  projects.                                                                      
- Copies the [tool.member-project] section from the root pyproject.toml to all   
+                                                                                
+ Copies the  section from the root pyproject.toml to all                        
  selected projects.                                                             
                                                                                 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --project  -p      TEXT  Optional list of project names or identifiers to    │
 │                          sync                                                │
-│                          [default: None]                                     │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 <!-- END:cmd reggie-build sync member-project-tool --help -->
@@ -272,13 +276,15 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync ruff --help -->
 ```bash
-2026-01-05 18:19:27 [INFO] sync - Syncing ruff
+2026-01-06 05:44:34 [INFO] sync - Syncing ruff
                                                                                 
  Usage: reggie-build sync ruff [OPTIONS]                                        
                                                                                 
  Run ruff formatter on git-tracked Python files.                                
- Formats all Python files tracked by git using the ruff formatter. If ruff is   
- not installed, either warns or fails depending on the require parameter.
+                                                                                
+ Formats all Python files tracked by git using the ruff formatter.              
+ If ruff is not installed, either warns or fails depending on the               
+ require parameter.
 ```
 <!-- END:cmd reggie-build sync ruff --help -->
 
@@ -286,25 +292,24 @@ uv run reggie-build sync version
 
 <!-- BEGIN:cmd reggie-build sync version --help -->
 ```bash
-2026-01-05 18:19:27 [INFO] sync - Syncing version
+2026-01-06 05:44:34 [INFO] sync - Syncing version
                                                                                 
  Usage: reggie-build sync version [OPTIONS] [VERSION]                           
                                                                                 
  Synchronize project versions across selected projects.                         
- Updates the version field in pyproject.toml for all selected projects. If no   
- version is specified, attempts to derive one from git commit hash or uses the  
- default version.                                                               
+                                                                                
+ Updates the version field in pyproject.toml for all selected projects.         
+ If no version is specified, attempts to derive one from git commit hash        
+ or uses the default version.                                                   
                                                                                 
 ╭─ Arguments ──────────────────────────────────────────────────────────────────╮
 │   version      [VERSION]  Version string to apply (e.g. 1.2.3 or             │
 │                           0.0.1+gabc123). If omitted, derived from git or    │
 │                           defaults to 0.0.1.                                 │
-│                           [default: None]                                    │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --project  -p      TEXT  Optional list of project names or identifiers to    │
 │                          sync                                                │
-│                          [default: None]                                     │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 <!-- END:cmd reggie-build sync version --help -->
@@ -324,9 +329,11 @@ uv run reggie-build sync version 1.2.3
 Usage: reggie-build openapi generate [OPTIONS] INPUT_SPEC [OUTPUT_DIR]         
                                                                                 
  Generate FastAPI code from an OpenAPI specification and sync changes.          
+                                                                                
  This command generates Python code from an OpenAPI spec, creating FastAPI      
- routes and Pydantic models. It uses hash-based change detection to only update 
- the output directory when files actually change.                               
+ routes and Pydantic models. It uses hash-based change detection to only        
+ update the output directory when files actually change.                        
+                                                                                
  In watch mode, the command monitors the spec file and regenerates code         
  whenever changes are detected.                                                 
                                                                                 
@@ -334,15 +341,12 @@ Usage: reggie-build openapi generate [OPTIONS] INPUT_SPEC [OUTPUT_DIR]
 │ *    input_spec      TEXT          Path or URL to the OpenAPI specification  │
 │                                    (YAML or JSON). May be a local file path  │
 │                                    or an HTTP(S) URL.                        │
-│                                    [default: None]                           │
 │                                    [required]                                │
 │      output_dir      [OUTPUT_DIR]  Destination directory for generated code. │
-│                                    [default: None]                           │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --template-dir        PATH  Optional template directory for                  │
 │                             fastapi-code-generator.                          │
-│                             [default: None]                                  │
 │ --watch                     Watch a local spec file for changes and          │
 │                             regenerate on updates.                           │
 ╰──────────────────────────────────────────────────────────────────────────────╯
@@ -392,6 +396,7 @@ The generator produces:
 Usage: reggie-build readme update-cmd [OPTIONS]                                
                                                                                 
  Update README command sentinel blocks.                                         
+                                                                                
  Only blocks whose command matches --filter are executed and updated.           
                                                                                 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
@@ -403,7 +408,6 @@ Usage: reggie-build readme update-cmd [OPTIONS]
 │                                      [default: 13]                           │
 │ --filter                    TEXT     Regex to select which BEGIN:cmd blocks  │
 │                                      to update.                              │
-│                                      [default: None]                         │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 <!-- END:cmd reggie-build readme update-cmd --help -->
@@ -441,16 +445,17 @@ The `readme update-cmd` command looks for sentinel blocks in your README:
 Usage: reggie-build sync [OPTIONS] COMMAND [ARGS]...                           
                                                                                 
  Synchronize all configuration across member projects.                          
+                                                                                
  When run without a subcommand, executes all registered sync commands against   
- the selected projects. This includes build-system config, dependencies, tool   
- settings, formatting, and versioning.                                          
+ the selected projects. This includes build-system config, dependencies,        
+ tool settings, formatting, and versioning.                                     
+                                                                                
  Use --project to limit which projects are affected, or omit to sync all        
  workspace members.                                                             
                                                                                 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --project  -p      TEXT  Optional list of project names or identifiers to    │
 │                          sync                                                │
-│                          [default: None]                                     │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────╮
 │ build-system                  Synchronize build-system configuration from    │

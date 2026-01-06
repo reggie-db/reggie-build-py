@@ -18,6 +18,7 @@ import hashlib
 import json
 import re
 import shutil
+import subprocess
 import warnings
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
@@ -36,7 +37,6 @@ warnings.filterwarnings(
     module="pydantic",
 )
 
-import fastapi_code_generator.__main__ as fastapi_code_generator_main  # noqa: E402
 
 LOG = utils.logger(__file__)
 
@@ -106,24 +106,39 @@ def generate(
             with TemporaryDirectory() as tmp:
                 tmp_dir = Path(tmp)
                 LOG.info(f"Generating code: {resolved_input} → {output_dir}")
+                args = [
+                    "uv",
+                    "tool",
+                    "run",
+                    "--from",
+                    "fastapi-code-generator",
+                    "--with",
+                    "click<8.2.0",
+                    "--",
+                    "fastapi-codegen",
+                    "--template-dir",
+                    tmpl,
+                    "--input",
+                    resolved_input,
+                    "--output",
+                    tmp_dir,
+                ]
+                proc = subprocess.Popen(
+                    args,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                )
 
-                try:
-                    # Invoke fastapi-code-generator via its Typer app
-                    fastapi_code_generator_main.app(
-                        [
-                            "--input",
-                            str(resolved_input),
-                            "--output",
-                            str(tmp_dir),
-                            "--template-dir",
-                            str(tmpl),
-                        ]
-                    )
-                except SystemExit as e:
-                    # Ignore successful exits from the sub-application
-                    if e.code:
-                        raise
+                assert proc.stdout is not None
 
+                for line in proc.stdout:
+                    LOG.info(line.rstrip())
+
+                rc = proc.wait()
+                if rc != 0:
+                    raise subprocess.CalledProcessError(rc, args)
                 (tmp_dir / "__init__.py").touch()
                 sync_generated_code(tmp_dir, output_dir)
 
@@ -174,8 +189,6 @@ def _resolve_input_spec(value: str) -> tuple[Path, str | None]:
         tmp.close()
 
         return Path(tmp.name), content_hash
-
-    raise ValueError(f"Invalid OpenAPI spec path or URL: {value}")
 
     raise ValueError(f"Invalid OpenAPI spec path or URL: {value}")
 
