@@ -40,7 +40,7 @@ def clean_text(text: str) -> str:
         lines = text.splitlines()
         out = []
         for line in lines:
-            line = line.strip()
+            line = line.rstrip()
             if line or (out and out[-1]):
                 out.append(line)
         text = "\n".join(out).rstrip()
