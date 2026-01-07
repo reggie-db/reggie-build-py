@@ -617,10 +617,11 @@ def _process_read_stream(out_stream: TextIO, log_level: int | None) -> Iterator[
     Yields:
         Each line read from the stream
     """
+    log = _logger() if log_level is not None else None
     for out_line in iter(out_stream.readline, ""):
         out_line = out_line.rstrip()
-        if log_level is not None:
-            _logger().log(log_level, out_line)
+        if log:
+            log.log(log_level, out_line)
         yield out_line
 
 
