@@ -4,7 +4,7 @@ OpenAPI code generation utilities.
 Generates FastAPI code from OpenAPI specifications and syncs generated files
 with change detection. This module provides:
 - Code generation from OpenAPI specs (local files or URLs)
-- File synchronization with hash-based change detection
+- File synchronization with hash based change detection
 - Watch mode for continuous regeneration
 - Custom Jinja2 templates for FastAPI code generation
 
@@ -82,7 +82,7 @@ def generate(
     Generate FastAPI code from an OpenAPI specification and sync changes.
 
     This command generates Python code from an OpenAPI spec, creating FastAPI
-    routes and Pydantic models. It uses hash-based change detection to only
+    routes and Pydantic models. It uses hash based change detection to only
     update the output directory when files actually change.
 
     In watch mode, the command monitors the spec file and regenerates code
@@ -98,7 +98,7 @@ def generate(
         if not output_dir:
             # Generate a unique directory name if none is provided
             dir_name = f"openapi_{temporary_hash}"
-            root_node = workspaces.root_node()
+            root_node = workspaces.root_node(ctx=ctx)
             output_dir = root_node.path / ".dev-local" / dir_name
 
         def _generate():
@@ -196,7 +196,7 @@ def sync_generated_code(input_dir: Path, output_dir: Path) -> None:
     """
     Sync generated code from input_dir to output_dir if any relative file differs.
 
-    Compares files using hash-based change detection and only performs a full
+    Compares files using hash based change detection and only performs a full
     copy if changes are detected. Logs all changed files for visibility.
 
     Args:
@@ -246,7 +246,7 @@ def _list_files(directory: Path) -> list[str]:
 
 def _hash_file(dir: Path, rel_file: str) -> str:
     """
-    Return SHA-256 hash for a relative file path, ignoring timestamp comments.
+    Return SHA256 hash for a relative file path, ignoring timestamp comments.
     """
     h = hashlib.sha256()
     file_path = dir / rel_file

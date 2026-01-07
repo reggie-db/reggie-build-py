@@ -32,7 +32,7 @@ def build_artifacts(ctx: typer.Context):
     - Python bytecode cache directories (__pycache__)
     - Python egg-info directories
 
-    It protects the root .venv and scripts directory from deletion.
+    It protects the root .venv directory from deletion.
     """
     root_node = workspaces.root_node(ctx=ctx)
     root_dir = root_node.path

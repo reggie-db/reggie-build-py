@@ -235,7 +235,7 @@ def ruff(
     ] = True,
 ):
     """
-    Run ruff formatter on git-tracked Python files.
+    Run ruff formatter on git tracked Python files.
 
     Formats all Python files tracked by git using ruff.
     """

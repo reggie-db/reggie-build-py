@@ -534,5 +534,5 @@ def which(name: str) -> pathlib.Path | None:
         file = pathlib.Path(name)
         if file.is_file() and os.access(file, os.X_OK):
             return file
-    logger(__file__).warning(f"Executable not found: {name}")
+    _log().warning(f"Executable not found: {name}")
     return None
