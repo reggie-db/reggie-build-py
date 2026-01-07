@@ -28,7 +28,7 @@ from urllib.parse import urlparse
 import requests
 import typer
 
-from reggie_build import utils
+from reggie_build import utils, workspaces
 
 warnings.filterwarnings(
     "ignore",
@@ -47,6 +47,7 @@ _TIMESTAMP_RE = re.compile(rb"^\s*#\s*timestamp:.*$")
 
 @app.command()
 def generate(
+    ctx: typer.Context,
     input_spec: Annotated[
         str,
         typer.Argument(
@@ -97,7 +98,8 @@ def generate(
         if not output_dir:
             # Generate a unique directory name if none is provided
             dir_name = f"openapi_{temporary_hash}"
-            output_dir = utils.dev_local() / dir_name
+            root_node = workspaces.root_node()
+            output_dir = root_node.path / ".dev-local" / dir_name
 
         def _generate():
             """
