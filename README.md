@@ -92,7 +92,7 @@ Usage: reggie-build create [OPTIONS] NAME COMMAND [ARGS]...
 │                                      depend on.                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
-<!-- END:cmd reggie-build create --help -->
+<!-- END:cmd -->
 
 ```bash
 # Create a new project
@@ -162,7 +162,7 @@ Usage: reggie-build sync [OPTIONS] COMMAND [ARGS]...
 │                                                         and exit.            │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
-<!-- END:cmd reggie-build sync --help -->
+<!-- END:cmd -->
 
 ```bash
 # Sync all configuration
@@ -178,27 +178,23 @@ uv run reggie-build sync --no-version --no-format-python
 ### README
 
 <!-- BEGIN:cmd reggie-build readme --help -->
-
-```bash
-Usage: reggie-build readme update-cmd [OPTIONS]
-
- Update README command sentinel blocks.
-
- Only blocks whose command matches --filter are executed and updated.
-
+```shell
+Usage: reggie-build readme [OPTIONS] COMMAND [ARGS]...                         
+                                                                                
+ Update README command sentinel blocks.                                         
+                                                                                
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --readme  -r      FILE     Path to README file to update.                    │
-│                            [default: README.md]                              │
-│ --write   -w      BOOLEAN  Write changes back to the README file.            │
-│                            [default: True]                                   │
-│ --jobs    -j      INTEGER  Maximum number of parallel commands.               │
-│                            [default: 13]                                     │
-│ --filter          TEXT     Regex to select which BEGIN:cmd blocks to update. │
-│ --help                     Show this message and exit.                       │
+│ --readme  -r                FILE     Path to README file to update.          │
+│                                      [default: README.md]                    │
+│ --write       --no-write             Write changes back to the README file.  │
+│                                      [default: write]                        │
+│ --jobs    -j                INTEGER  Maximum number of parallel commands.    │
+│                                      [default: 13]                           │
+│ --filter                    TEXT     Regex to select which BEGIN:cmd blocks  │
+│                                      to update.                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
-
-<!-- END:cmd reggie-build readme update-cmd --help -->
+<!-- END:cmd -->
 
 Automatically update README.md files by executing help commands embedded in sentinel blocks.
 
@@ -219,60 +215,17 @@ uv run reggie-build readme update-cmd --write false
 uv run reggie-build readme update-cmd --jobs 4
 ```
 
-> **Note**: This README's command documentation was automatically generated using `reggie-build readme update-cmd`,
+> **Note**: This README's command documentation was automatically generated using `reggie-build readme`,
 > which executes commands and embeds their help output into sentinel blocks.
 
 #### How It Works
 
 The `readme update-cmd` command looks for sentinel blocks in your README:
 
+```markdown
 <!-- BEGIN:cmd reggie-build sync --help -->
-```shell
-Usage: reggie-build sync [OPTIONS] COMMAND [ARGS]...                           
-                                                                                
- Synchronize project configurations across the workspace.                       
-                                                                                
- This command performs several synchronization tasks to keep member projects    
- aligned with the root project settings and ensure consistent dependencies.     
-                                                                                
-╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --name                -n                          TEXT  Specific member      │
-│                                                         project names to     │
-│                                                         sync.                │
-│ --version                 --no-version                  Sync version from    │
-│                                                         git history to all   │
-│                                                         member projects.     │
-│                                                         [default: version]   │
-│ --build-system            --no-build-system             Sync  from root      │
-│                                                         project to all       │
-│                                                         member projects.     │
-│                                                         [default:            │
-│                                                         build-system]        │
-│ --member-project-to…      --no-member-project…          Sync  from root      │
-│                                                         project to all       │
-│                                                         member projects.     │
-│                                                         [default:            │
-│                                                         member-project-tool] │
-│ --member-project-de…      --no-member-project…          Sync internal member │
-│                                                         dependencies to use  │
-│                                                         file:// paths and uv │
-│                                                         workspace sources.   │
-│                                                         [default:            │
-│                                                         member-project-depe… │
-│ --format-python           --no-format-python            Run ruff format and  │
-│                                                         check on all         │
-│                                                         projects.            │
-│                                                         [default:            │
-│                                                         format-python]       │
-│ --format-pyproject        --no-format-pyproje…          Format               │
-│                                                         pyproject.toml files │
-│                                                         using taplo.         │
-│                                                         [default:            │
-│                                                         format-pyproject]    │
-│                                                         and exit.            │
-╰──────────────────────────────────────────────────────────────────────────────╯
+<!-- END:cmd -->
 ```
-<!-- END:cmd reggie-build sync --help -->
 
 It executes the command between `BEGIN:cmd` and `--help`, captures the output, and replaces the content between the
 BEGIN and END markers with a formatted code block containing the command's output.
@@ -389,10 +342,14 @@ Automated README documentation updater using command output sentinels.
 
 Core dependencies:
 
+- `uv`: Workspace and dependency management
+- `ruff`: Python formatting and linting
+- `taplo`: TOML formatting
 - `typer`: CLI framework
 - `tomlkit`: TOML manipulation
 - `mergedeep`: Deep merging of configurations
 - `dacite`: Dataclass conversion
+- `sitecustomize-entrypoints`: Automatic logging initialization
 
 ### Environment Variables
 

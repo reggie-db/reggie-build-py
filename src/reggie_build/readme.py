@@ -31,7 +31,7 @@ _CMD_BLOCK_RE = re.compile(
     r"""
     \s*<!--\s*BEGIN:cmd\s+(?P<cmd>[^>]+?)\s*-->\s*
     (?P<body>.*?)
-    \s*<!--\s*END:cmd\s+(?P=cmd)\s*-->\s*
+    \s*<!--\s*END:cmd\s*-->\s*
     """,
     re.DOTALL | re.VERBOSE,
 )
@@ -40,6 +40,7 @@ _CMD_BLOCK_RE = re.compile(
 _HELP_OPTIONS_HEADER_RE = re.compile(r"\bOptions\b.*[-─]")
 _HELP_OPTIONS_FOOTER_RE = re.compile(r"^\s*[-─╰╯]+")
 _HELP_OPTIONS_HELP_ROW_RE = re.compile(r"^\s*[│|]?\s*--help\b")
+_CODE_BLOCK_RE = re.compile(r"^([`~]{3,}).*?^\1", re.MULTILINE | re.DOTALL)
 
 
 @app.callback(invoke_without_command=True)
@@ -80,8 +81,14 @@ def update_cmd(
             raise ValueError(f"README file not found at {readme}")
 
     content = readme.read_text()
+    code_ranges = [m.span() for m in _CODE_BLOCK_RE.finditer(content)]
 
-    block_matches = list(_CMD_BLOCK_RE.finditer(content))
+    def is_in_code_block(pos: int) -> bool:
+        return any(start <= pos < end for start, end in code_ranges)
+
+    block_matches = [
+        m for m in _CMD_BLOCK_RE.finditer(content) if not is_in_code_block(m.start())
+    ]
     if not block_matches:
         LOG.info("No cmd blocks found")
         return
@@ -117,14 +124,13 @@ def update_cmd(
 
     def _replace(match: re.Match) -> str:
         """Replace sentinel block content with executed command output."""
+        if is_in_code_block(match.start()):
+            return match.group(0)
+
         cmd = match.group("cmd")
         if cmd not in output_map:
             return match.group(0)  # untouched
-        return (
-            f"\n\n<!-- BEGIN:cmd {cmd} -->\n"
-            f"{output_map[cmd]}\n"
-            f"<!-- END:cmd {cmd} -->\n\n"
-        )
+        return f"\n\n<!-- BEGIN:cmd {cmd} -->\n{output_map[cmd]}\n<!-- END:cmd -->\n\n"
 
     updated = _CMD_BLOCK_RE.sub(_replace, content)
 
