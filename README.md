@@ -88,6 +88,7 @@ Usage: reggie-build create [OPTIONS] NAME COMMAND [ARGS]...
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --path                         PATH  Optional parent directory within the    │
 │                                      workspace root. Defaults to root.       │
+│                                      [default: packages]                     │
 │ --project-dependency  -pd      TEXT  List of existing workspace projects to  │
 │                                      depend on.                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
@@ -149,6 +150,10 @@ Usage: reggie-build sync [OPTIONS] COMMAND [ARGS]...
 │                                                         workspace sources.   │
 │                                                         [default:            │
 │                                                         member-project-depe… │
+│ --member-paths            --no-member-paths             Sync member path     │
+│                                                         patterns             │
+│                                                         [default:            │
+│                                                         member-paths]        │
 │ --format-python           --no-format-python            Run ruff format and  │
 │                                                         check on all         │
 │                                                         projects.            │

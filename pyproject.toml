@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "reggie-build"
-version = "0.0.1+gae9da3a"
+version = "0.0.1+ga85315f"
 description = "Local build utilities"
 requires-python = ">=3.12,<3.14"
 dependencies = [
@@ -25,3 +25,7 @@ logs_auto_config = "reggie_build.config:init"
 
 [project.scripts]
 reggie-build = "reggie_build.cli:main"
+
+[tool.uv.workspace]
+members = ["packages/*"]
+exclude = ["src", "dev-local", "__*", "*.egg-info", "build", "dist", "prpr"]

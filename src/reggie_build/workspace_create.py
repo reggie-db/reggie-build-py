@@ -16,6 +16,8 @@ setting up the directory structure, package layout, and dependencies.
 """
 
 LOG = logging.getLogger(__name__)
+_PATH = pathlib.Path("packages")
+
 
 app = typer.Typer()
 
@@ -33,7 +35,7 @@ def create(
         typer.Option(
             help="Optional parent directory within the workspace root. Defaults to root."
         ),
-    ] = None,
+    ] = _PATH,
     project_dependencies: Annotated[
         list[str] | None,
         typer.Option(
@@ -49,15 +51,13 @@ def create(
     Sets up a pyproject.toml and a standard src/<package>/__init__.py layout.
     Internal workspace dependencies are automatically synchronized after creation.
     """
+
     metadata = workspace.metadata()
     root_dir = metadata.workspace_root
-    if path:
-        path = path.resolve()
-        # Ensure the specified path is within the workspace root
-        if not path.is_relative_to(root_dir):
-            raise ValueError(f"Invalid path: {path}")
-    else:
-        path = root_dir
+    path = root_dir / path
+    # Ensure the specified path is within the workspace root
+    if not path.is_relative_to(root_dir):
+        raise ValueError(f"Path must be relative to root - root:{root_dir} path:{path}")
 
     project_dir = path / name
     pyproject_path = project_dir / pyproject.FILE_NAME

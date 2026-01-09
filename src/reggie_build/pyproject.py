@@ -5,6 +5,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass, field
 from tempfile import NamedTemporaryFile
+from typing import Mapping
 from urllib.parse import urlparse
 
 import tomlkit
@@ -138,7 +139,7 @@ class PyProject:
         for key in keys:
             cur_table = cur_node.table
             value = cur_table.get(key, None)
-            if not isinstance(value, Table):
+            if not isinstance(value, Mapping):
                 if create:
                     value = tomlkit.table(True)
                     if key in cur_table:
@@ -168,6 +169,7 @@ class PyProjectTree:
 
     name: str
     root: PyProject
+    filtered: bool = field(default=False, init=False)
     members: dict[str, PyProject] = field(default_factory=dict)
 
     def projects(self) -> list[PyProject]:
@@ -176,7 +178,9 @@ class PyProjectTree:
         """
         return [self.root, *self.members.values()]
 
-    def filter_members(self, names: list[str] | None, required: bool = False):
+    def filter_members(
+        self, names: list[str] | None, required: bool = False
+    ) -> "PyProjectTree":
         """
         Filter the members dictionary to only include specified names.
 
@@ -185,14 +189,22 @@ class PyProjectTree:
             required: If True, raises ValueError if a specified name is not found.
         """
         if not names:
-            return
-        if required:
-            for name in names:
-                if name not in self.members:
+            return self
+        members_copy: dict[str, PyProject] = {}
+        for name in [names, *self.members.keys()]:
+            if name in members_copy:
+                continue
+            member_proj = self.members.get(name, None)
+            if member_proj is None:
+                if required:
                     raise ValueError("Member %s not found" % name)
-        for member_name in list(self.members.keys()):
-            if member_name not in names:
-                self.members.pop(member_name)
+                continue
+            members_copy[name] = member_proj
+        pyproject_tree_copy = PyProjectTree(
+            name=name, root=self.root, members=members_copy
+        )
+        pyproject_tree_copy.filtered = True
+        return pyproject_tree_copy
 
 
 def tree(metadata: workspace.Metadata | None = None) -> PyProjectTree:

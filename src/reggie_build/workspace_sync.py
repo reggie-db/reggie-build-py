@@ -3,6 +3,7 @@ import os
 import pathlib
 import re
 import subprocess
+from collections import defaultdict
 from copy import deepcopy
 from typing import Annotated, Collection
 
@@ -52,6 +53,10 @@ def sync(
             help="Sync internal member dependencies to use file:// paths and uv workspace sources."
         ),
     ] = True,
+    member_paths: Annotated[
+        bool,
+        typer.Option(help="Sync member path patterns"),
+    ] = True,
     format_python: Annotated[
         bool,
         typer.Option(help="Run ruff format and check on all projects."),
@@ -68,8 +73,8 @@ def sync(
         pathlib.Path | None,
         typer.Option("--output-dir", "-o", hidden=True, help="Output directory."),
     ] = None,
-    pyproject_tree: Annotated[
-        PyProjectTree | None,
+    new_pyprojects: Annotated[
+        dict[str, PyProject] | None,
         typer.Option(hidden=True, parser=lambda _: None),
     ] = None,
 ):
@@ -83,8 +88,11 @@ def sync(
         os.chdir(root_dir)
     if output_dir:
         output_dir = output_dir.absolute()
-    pyproject_tree = pyproject.tree() if pyproject_tree is None else pyproject_tree
-    pyproject_tree.filter_members(names)
+    unfiltered_pyproject_tree = pyproject.tree()
+    if new_pyprojects:
+        for name, proj in new_pyprojects.items():
+            unfiltered_pyproject_tree.members[name] = proj
+    pyproject_tree = unfiltered_pyproject_tree.filter_members(names)
     LOG.debug("Syncing projects: %s", pyproject_tree)
     if version:
         sync_version(pyproject_tree.projects())
@@ -93,7 +101,9 @@ def sync(
     if member_project_tool:
         sync_member_project_tool(pyproject_tree)
     if member_project_dependencies:
-        sync_member_project_dependencies(pyproject_tree)
+        sync_member_project_dependencies(unfiltered_pyproject_tree, pyproject_tree)
+    if member_paths:
+        sync_member_paths(unfiltered_pyproject_tree)
     if format_python:
         ruff_format(pyproject_tree.projects())
     for proj_name, proj in {
@@ -194,31 +204,36 @@ def sync_member_project_tool(pyproject_tree: PyProjectTree):
             merge(member.data, member_project_data)
 
 
-def sync_member_project_dependencies(pyproject_tree: PyProjectTree):
+def sync_member_project_dependencies(
+    unfiltered_pyproject_tree: PyProjectTree, pyproject_tree: PyProjectTree
+):
     """
     Update internal dependencies within the workspace to use relative file:// paths.
 
     This ensures that projects can correctly reference each other without
     relying on external registry versions.
     """
+    if unfiltered_pyproject_tree.filtered:
+        raise ValueError(
+            "Unfiltered workspace tree required for member project dependencies sync"
+        )
     for proj in pyproject_tree.projects():
-        _sync_member_project_dependencies(proj)
+        _sync_member_project_dependencies(unfiltered_pyproject_tree, proj)
 
 
-def _sync_member_project_dependencies(proj: PyProject):
+def _sync_member_project_dependencies(pyproject_tree: PyProjectTree, proj: PyProject):
     """
     Internal helper to synchronize dependencies and uv sources for a specific project.
     """
-    pyproject_tree_unfiltered = pyproject.tree()
     member_dependencies: list[str] = []
     dependencies = proj.data.get("project", {}).get("dependencies", [])
     if dependencies:
         for idx, dependency in enumerate(dependencies):
             dep = _parse_dependency_name(dependencies[idx])
             dep_proj = (
-                pyproject_tree_unfiltered.root
-                if dep == pyproject_tree_unfiltered.name
-                else pyproject_tree_unfiltered.members.get(dep, None)
+                pyproject_tree.root
+                if dep == pyproject_tree.name
+                else pyproject_tree.members.get(dep, None)
             )
             if dep_proj:
                 dependencies[idx] = _member_dependency(proj, dep, dep_proj)
@@ -247,6 +262,76 @@ def _sync_member_project_dependencies(proj: PyProject):
                 workspace_key,
                 proj,
             )
+
+
+def sync_member_paths(
+    unfiltered_pyproject_tree: PyProjectTree,
+):
+    if unfiltered_pyproject_tree.filtered:
+        raise ValueError("Unfiltered workspace tree required for member path sync")
+    root_proj = unfiltered_pyproject_tree.root
+    root_dir = root_proj.path.parent
+    unfiltered_members = unfiltered_pyproject_tree.members
+    members: list[str] = []
+    for dir in _sync_member_paths(
+        root_dir, [p.path.parent for p in unfiltered_members.values()]
+    ):
+        member = str(os.path.relpath(dir, root_dir))
+        exact = (dir / pyproject.FILE_NAME).exists()
+        if not exact:
+            member += "/*"
+        members.append(member)
+    members.sort(key=lambda s: (not s.endswith("*"), s))
+    members_key = "members"
+    workspace_table = root_proj.table("tool", "uv", "workspace", create=True).table
+    if members_key in workspace_table:
+        if members:
+            member_table = workspace_table[members_key]
+            member_table.clear()
+            member_table.extend(members)
+        else:
+            workspace_table.remove(members_key)
+    else:
+        workspace_table.update({members_key: members})
+
+
+def _sync_member_paths(
+    root: pathlib.Path, paths: list[pathlib.Path]
+) -> set[pathlib.Path]:
+    root = root.resolve()
+    paths = {p.resolve() for p in paths if p != root}
+
+    # Ensure all paths are under root
+    if not all(p.is_relative_to(root) for p in paths):
+        raise ValueError("All paths must be under root")
+
+    # Work with paths relative to root
+    rels = {p.relative_to(root) for p in paths}
+
+    changed = True
+    while changed:
+        changed = False
+        by_parent: dict[pathlib.Path, set[pathlib.Path]] = defaultdict(set)
+
+        for p in rels:
+            by_parent[p.parent].add(p)
+
+        for parent, children in by_parent.items():
+            # Never collapse to root
+            if parent == pathlib.Path("."):
+                continue
+
+            # All siblings under parent are present
+            names = {c.name for c in children}
+            expected = {parent / name for name in names}
+
+            if children == expected and len(children) > 1:
+                rels -= children
+                rels.add(parent)
+                changed = True
+                break
+
+    return rels
 
 
 def _parse_dependency_name(dep: str) -> str | None:

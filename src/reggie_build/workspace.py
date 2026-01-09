@@ -78,3 +78,18 @@ def root_dir() -> pathlib.Path:
     Return the root directory of the uv workspace.
     """
     return metadata().workspace_root
+
+
+if __name__ == "__main__":
+    root = pathlib.Path(root_dir()).parent / "reggie-bricks-py"
+    root = root_dir()
+
+    SKIP = {".venv", "__pycache__", "build", "dist"}
+
+    dirs = [
+        p.parent
+        for p in root.rglob("pyproject.toml")
+        if not any(part in SKIP for part in p.parts)
+    ]
+
+    print(dirs)
