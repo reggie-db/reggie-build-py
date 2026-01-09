@@ -86,7 +86,7 @@ Usage: reggie-build create [OPTIONS] NAME COMMAND [ARGS]...
 │                      [required]                                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --path                         PATH  Optional parent directory within the    │
+│ --path                -p       PATH  Optional parent directory within the    │
 │                                      workspace root. Defaults to root.       │
 │                                      [default: packages]                     │
 │ --project-dependency  -pd      TEXT  List of existing workspace projects to  │

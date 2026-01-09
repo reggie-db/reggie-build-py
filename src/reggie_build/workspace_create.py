@@ -33,7 +33,9 @@ def create(
     path: Annotated[
         pathlib.Path | None,
         typer.Option(
-            help="Optional parent directory within the workspace root. Defaults to root."
+            "--path",
+            "-p",
+            help="Optional parent directory within the workspace root. Defaults to root.",
         ),
     ] = _PATH,
     project_dependencies: Annotated[

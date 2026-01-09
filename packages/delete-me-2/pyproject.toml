@@ -1,6 +1,6 @@
 [project]
 name = "delete-me-2"
-version = "0.0.1+g279069a"
+version = "0.0.1+gdfebf5c"
 requires-python = ">=3.6"
 
 [build-system]

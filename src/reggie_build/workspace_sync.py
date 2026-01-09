@@ -270,68 +270,108 @@ def sync_member_paths(
     if unfiltered_pyproject_tree.filtered:
         raise ValueError("Unfiltered workspace tree required for member path sync")
     root_proj = unfiltered_pyproject_tree.root
-    root_dir = root_proj.path.parent
-    unfiltered_members = unfiltered_pyproject_tree.members
-    members: list[str] = []
-    for dir in _sync_member_paths(
-        root_dir, [p.path.parent for p in unfiltered_members.values()]
-    ):
-        member = str(os.path.relpath(dir, root_dir))
-        exact = (dir / pyproject.FILE_NAME).exists()
-        if not exact:
-            member += "/*"
-        members.append(member)
-    members.sort(key=lambda s: (not s.endswith("*"), s))
+    workspace_key_path = ["tool", "uv", "workspace"]
+    exclude_patterns: list[str] | None = None
+    if workspace_node := root_proj.table(*workspace_key_path):
+        if exclude_item := workspace_node.table.get("exclude", None):
+            exclude_patterns = [item.value for item in exclude_item]
+    member_paths = [p.path.parent for p in unfiltered_pyproject_tree.members.values()]
+    member_patterns = _workspace_member_paths(
+        root_proj.path.parent,
+        member_paths,
+        exclude_patterns,
+    )
+    workspace_table = root_proj.table(*workspace_key_path, create=True).table
     members_key = "members"
-    workspace_table = root_proj.table("tool", "uv", "workspace", create=True).table
     if members_key in workspace_table:
-        if members:
+        if member_patterns:
             member_table = workspace_table[members_key]
             member_table.clear()
-            member_table.extend(members)
+            member_table.extend(member_patterns)
         else:
             workspace_table.remove(members_key)
     else:
-        workspace_table.update({members_key: members})
+        workspace_table.update({members_key: member_patterns})
 
 
-def _sync_member_paths(
-    root: pathlib.Path, paths: list[pathlib.Path]
-) -> set[pathlib.Path]:
+def _workspace_member_paths(
+    root: pathlib.Path, paths: list[pathlib.Path], excludes: list[str]
+) -> list[str]:
+    """
+    Consolidate project paths into parent wildcards (e.g., 'packages/*') strictly.
+    """
+
     root = root.resolve()
     paths = {p.resolve() for p in paths if p != root}
 
-    # Ensure all paths are under root
     if not all(p.is_relative_to(root) for p in paths):
         raise ValueError("All paths must be under root")
 
-    # Work with paths relative to root
-    rels = {p.relative_to(root) for p in paths}
+    original_rels = {p.relative_to(root) for p in paths}
+    final_paths = set(original_rels)
 
-    changed = True
-    while changed:
-        changed = False
-        by_parent: dict[pathlib.Path, set[pathlib.Path]] = defaultdict(set)
+    by_parent: dict[pathlib.Path, set[pathlib.Path]] = defaultdict(set)
+    for p in original_rels:
+        by_parent[p.parent].add(p)
 
-        for p in rels:
-            by_parent[p.parent].add(p)
+    for parent, children in by_parent.items():
+        if parent == pathlib.Path("."):
+            LOG.debug("Skip parent=root")
+            continue
 
-        for parent, children in by_parent.items():
-            # Never collapse to root
-            if parent == pathlib.Path("."):
+        parent_full = root / parent
+        if not parent_full.is_dir():
+            LOG.debug("Skip parent=%s reason=not_dir", parent)
+            continue
+
+        try:
+            fs_items = [item for item in parent_full.iterdir() if item.is_dir()]
+        except OSError as e:
+            LOG.debug("Skip parent=%s reason=iterdir_error err=%s", parent, e)
+            continue
+
+        valid_fs_children = []
+        skipped = []
+
+        for item in fs_items:
+            if item.name.startswith(".") or item.name == "__pycache__":
+                skipped.append(item.name)
                 continue
 
-            # All siblings under parent are present
-            names = {c.name for c in children}
-            expected = {parent / name for name in names}
+            item_rel = parent / item.name
+            if any(item_rel.match(ex) for ex in excludes):
+                skipped.append(item.name)
+                continue
 
-            if children == expected and len(children) > 1:
-                rels -= children
-                rels.add(parent)
-                changed = True
-                break
+            valid_fs_children.append(item_rel)
 
-    return rels
+        if set(children) != set(valid_fs_children):
+            LOG.debug(
+                "NoCollapse parent=%s expected=%s actual=%s skipped=%s",
+                parent,
+                list(children),
+                valid_fs_children,
+                skipped,
+            )
+            continue
+
+        LOG.debug(
+            "Collapse parent=%s children=%s",
+            parent,
+            list(children),
+        )
+
+        final_paths -= children
+        final_paths.add(parent)
+
+    results = []
+    for p in sorted(final_paths, key=lambda p: p.parts):
+        if p in original_rels:
+            results.append(p.as_posix())
+        else:
+            results.append(f"{p.as_posix()}/*")
+
+    return results
 
 
 def _parse_dependency_name(dep: str) -> str | None:
@@ -380,6 +420,7 @@ def _ruff_format(path: pathlib.Path):
 
 
 if "__main__" == __name__:
+    os.chdir("/Users/reggie.pierce/Projects/reggie-bricks-py")
     from typer.testing import CliRunner
 
     from reggie_build import cli
