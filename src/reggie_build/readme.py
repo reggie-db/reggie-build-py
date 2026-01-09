@@ -10,6 +10,7 @@ Supports parallel execution, smart help filtering, and selective updates.
 from __future__ import annotations
 
 import logging
+import os
 import re
 import shlex
 import subprocess
@@ -20,7 +21,7 @@ from typing import Pattern
 
 import typer
 
-from reggie_build import workspace
+from reggie_build import config, workspace
 
 LOG = logging.getLogger(__name__)
 
@@ -162,7 +163,10 @@ def _run_cmd(cmd: str) -> tuple[str, str]:
     """
     args = shlex.split(cmd)
     has_help = "--help" in args
-
+    LOG.debug("Running cmd block - args:%s has_help:%s", args, has_help)
+    env = os.environ.copy().update(
+        {config.LOG_LEVEL_ENV_NAME: logging.getLevelName(logging.ERROR)}
+    )
     proc = subprocess.run(
         cmd,
         shell=True,
@@ -170,6 +174,7 @@ def _run_cmd(cmd: str) -> tuple[str, str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        env=env,
     )
 
     if has_help:

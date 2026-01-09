@@ -12,6 +12,8 @@ and intended to be automatically loaded by a site customizer, though it can
 also be called manually as needed.
 """
 
+LOG_LEVEL_ENV_NAME = "LOG_LEVEL"
+
 
 @functools.cache
 def init():
@@ -28,7 +30,7 @@ def init():
     format_stderr = (
         "%(asctime)s.%(msecs)03d | %(levelname)s | %(name)s:%(lineno)d - %(message)s"
     )
-    log_level_env = os.getenv("LOG_LEVEL", "").upper()
+    log_level_env = os.getenv(LOG_LEVEL_ENV_NAME, "").upper()
     log_level = logging.getLevelNamesMapping().get(log_level_env, logging.INFO)
 
     def _create_handler(
